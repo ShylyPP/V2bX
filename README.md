@@ -46,8 +46,18 @@ A V2board node server based on multi core, modified from XrayR.
 
 ### 一键安装
 
+```bash
+wget -N https://raw.githubusercontent.com/ShylyPP/V2bX-Private/dev_new/install.sh && bash install.sh
 ```
-wget -N https://raw.githubusercontent.com/wyx2685/V2bX-script/master/install.sh && bash install.sh
+
+**卸载：**
+```bash
+bash install.sh uninstall
+```
+
+**更新：**
+```bash
+bash install.sh update
 ```
 
 ### 手动安装
