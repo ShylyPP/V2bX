@@ -68,18 +68,18 @@ install_base() {
 
 download_V2bX() {
     echo -e "${green}开始下载V2bX...${plain}"
-    
+
     # 创建临时目录
     rm -rf /tmp/V2bX
     mkdir -p /tmp/V2bX
     cd /tmp/V2bX
-    
+
     # 尝试从 GitHub Releases 下载（如果有发布版本）
     # DOWNLOAD_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/latest/download/V2bX-linux-${arch}.tar.gz"
     # 由于是私有仓库，这里使用从源码编译的方式
-    
+
     echo -e "${yellow}正在从源码编译V2bX...${plain}"
-    
+
     # 安装 Go 环境（如果未安装）
     if ! command -v go &> /dev/null; then
         echo -e "${yellow}正在安装Go环境...${plain}"
@@ -89,7 +89,7 @@ download_V2bX() {
         export PATH=$PATH:/usr/local/go/bin
         echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
     fi
-    
+
     # 安装 Git（如果未安装）
     if ! command -v git &> /dev/null; then
         if [[ $release == "centos" ]]; then
@@ -98,17 +98,17 @@ download_V2bX() {
             apt install git -y
         fi
     fi
-    
+
     # 克隆仓库并编译
     echo -e "${yellow}正在克隆仓库...${plain}"
     git clone -b ${BRANCH} https://github.com/${REPO_OWNER}/${REPO_NAME}.git V2bX-src
     cd V2bX-src
-    
+
     echo -e "${yellow}正在编译V2bX...${plain}"
     export GOEXPERIMENT=jsonv2
     go mod download
     go build -v -o V2bX -tags "sing xray hysteria2 with_quic with_grpc with_utls with_wireguard with_acme with_gvisor" -trimpath -ldflags "-s -w"
-    
+
     if [ $? -eq 0 ]; then
         echo -e "${green}编译成功！${plain}"
     else
@@ -119,15 +119,15 @@ download_V2bX() {
 
 install_V2bX() {
     echo -e "${green}开始安装V2bX...${plain}"
-    
+
     # 创建安装目录
     mkdir -p ${INSTALL_PATH}
     mkdir -p ${CONFIG_PATH}
-    
+
     # 复制二进制文件
     cp /tmp/V2bX/V2bX-src/V2bX ${INSTALL_PATH}/V2bX
     chmod +x ${INSTALL_PATH}/V2bX
-    
+
     # 创建示例配置文件
     if [ ! -f ${CONFIG_PATH}/config.json ]; then
         cat > ${CONFIG_PATH}/config.json <<EOF
@@ -174,14 +174,14 @@ EOF
         echo -e "${yellow}已创建配置文件模板: ${CONFIG_PATH}/config.json${plain}"
         echo -e "${yellow}请编辑配置文件后再启动服务！${plain}"
     fi
-    
+
     # 清理临时文件
     rm -rf /tmp/V2bX
 }
 
 create_service() {
     echo -e "${green}创建systemd服务...${plain}"
-    
+
     cat > ${SERVICE_FILE} <<EOF
 [Unit]
 Description=V2bX Service
@@ -199,7 +199,7 @@ LimitNOFILE=65535
 [Install]
 WantedBy=multi-user.target
 EOF
-    
+
     systemctl daemon-reload
     systemctl enable V2bX
     echo -e "${green}systemd服务创建完成${plain}"
@@ -225,12 +225,12 @@ main() {
     echo -e "${green}      作者: ${REPO_OWNER}${plain}"
     echo -e "${green}========================================${plain}"
     echo ""
-    
+
     install_base
     download_V2bX
     install_V2bX
     create_service
-    
+
     echo ""
     echo -e "${green}========================================${plain}"
     echo -e "${green}      V2bX 安装完成！${plain}"
