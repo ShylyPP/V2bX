@@ -47,18 +47,24 @@ A V2board node server based on multi core, modified from XrayR.
 ### 一键安装
 
 ```bash
-wget -N https://raw.githubusercontent.com/ShylyPP/V2bX-Private/dev_new/install.sh && bash install.sh
+wget -N https://raw.githubusercontent.com/ShylyPP/V2bX-script/master/install.sh && bash install.sh
 ```
 
-**卸载：**
-```bash
-bash install.sh uninstall
-```
+### 快速管理（v2bx 菜单）
 
-**更新：**
-```bash
-bash install.sh update
-```
+安装脚本会创建一个交互式管理命令 `v2bx`（位于 /usr/bin/v2bx）。在 VPS 上直接输入 `v2bx`，即可使用数字选项进行常见操作：
+
+1. 启动服务
+2. 停止服务
+3. 重启服务
+4. 查看日志
+5. 查看状态
+6. 编辑配置（默认 nano 打开 /etc/V2bX/config.json）
+7. 更新程序
+8. 卸载程序
+9. 退出
+
+若未生成该命令，请重新执行安装脚本即可创建。
 
 ### 手动安装
 
