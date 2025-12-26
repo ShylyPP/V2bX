@@ -143,6 +143,8 @@ jobs:
           mv V2bX V2bX.exe
       - name: Prepare to release
         run: |
+          export LANG=zh_CN.UTF-8
+          export LC_ALL=zh_CN.UTF-8
           cp ${GITHUB_WORKSPACE}/README.md ./build_assets/README.md
           cp ${GITHUB_WORKSPACE}/LICENSE ./build_assets/LICENSE
           cp ${GITHUB_WORKSPACE}/example/*.json ./build_assets/
