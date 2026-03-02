@@ -112,7 +112,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25.0'
+          go-version: '1.26.0'
 
       - name: Get project dependencies
         run: |
@@ -143,8 +143,6 @@ jobs:
           mv V2bX V2bX.exe
       - name: Prepare to release
         run: |
-          export LANG=zh_CN.UTF-8
-          export LC_ALL=zh_CN.UTF-8
           cp ${GITHUB_WORKSPACE}/README.md ./build_assets/README.md
           cp ${GITHUB_WORKSPACE}/LICENSE ./build_assets/LICENSE
           cp ${GITHUB_WORKSPACE}/example/*.json ./build_assets/
