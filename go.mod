@@ -5,9 +5,9 @@ go 1.26
 toolchain go1.26.0
 
 require (
-	github.com/apernet/hysteria/core/v2 v2.6.3
-	github.com/apernet/hysteria/extras/v2 v2.6.3
-	github.com/apernet/quic-go v0.57.2-0.20260111184307-eec823306178
+	github.com/apernet/hysteria/core/v2 v2.7.1
+	github.com/apernet/hysteria/extras/v2 v2.7.1
+	github.com/apernet/quic-go v0.59.1-0.20260217092621-db4786c77a22
 	github.com/beevik/ntp v1.4.4-0.20240716062501-06ef196b89ec
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-acme/lego/v4 v4.25.2
@@ -100,7 +100,6 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.23.0 // indirect
-	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/gofrs/uuid/v5 v5.4.0 // indirect
@@ -109,7 +108,6 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/google/pprof v0.0.0-20240727154555-813a5fbdbec8 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
@@ -161,7 +159,6 @@ require (
 	github.com/nrdcg/oci-go-sdk/dns/v1065 v1065.95.2 // indirect
 	github.com/nrdcg/porkbun v0.4.0 // indirect
 	github.com/nzdjb/go-metaname v1.0.0 // indirect
-	github.com/onsi/ginkgo/v2 v2.20.1 // indirect
 	github.com/ovh/go-ovh v1.9.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
@@ -224,7 +221,6 @@ require (
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
 	go.opentelemetry.io/otel/trace v1.39.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
-	go.uber.org/mock v0.5.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/ratelimit v0.3.1 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
@@ -251,7 +247,5 @@ require (
 )
 
 replace github.com/sagernet/sing-box v1.13.0 => github.com/wyx2685/sing-box_mod v1.13.0-alpha.5
-
-replace github.com/apernet/quic-go v0.57.2-0.20260111184307-eec823306178 => github.com/apernet/quic-go v0.52.1-0.20250607183305-9320c9d14431
 
 replace github.com/xtls/xray-core v1.260206.0 => github.com/wyx2685/xray-core v0.0.0-20260223114410-dab919831558
