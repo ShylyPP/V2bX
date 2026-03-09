@@ -3,8 +3,8 @@ module github.com/InazumaV/V2bX
 go 1.26
 
 require (
-	github.com/apernet/hysteria/core/v2 v2.6.3
-	github.com/apernet/hysteria/extras/v2 v2.6.3
+	github.com/apernet/hysteria/core/v2 v2.7.0
+	github.com/apernet/hysteria/extras/v2 v2.6.4
 	github.com/apernet/quic-go v0.57.2-0.20260111184307-eec823306178
 	github.com/beevik/ntp v1.4.4-0.20240716062501-06ef196b89ec
 	github.com/fsnotify/fsnotify v1.9.0
