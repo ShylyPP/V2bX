@@ -244,6 +244,8 @@ require (
 	lukechampine.com/blake3 v1.4.1 // indirect
 )
 
-replace github.com/sagernet/sing-box v1.13.0 => github.com/wyx2685/sing-box_mod v1.13.0-alpha.5
+replace github.com/sagernet/sing v0.8.0-beta.16 => github.com/sagernet/sing v0.8.0-beta.6
+
+replace github.com/apernet/quic-go => github.com/apernet/quic-go v0.57.2-0.20260111184307-eec823306178
 
 replace github.com/xtls/xray-core => github.com/wyx2685/xray-core v0.0.0-20260301200735-965d62dfa5de
