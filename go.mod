@@ -7,7 +7,7 @@ toolchain go1.25.0
 require (
 	github.com/apernet/hysteria/core/v2 v2.6.3
 	github.com/apernet/hysteria/extras/v2 v2.6.3
-	github.com/apernet/quic-go v0.52.1-0.20250607183305-9320c9d14431
+	github.com/apernet/quic-go v0.57.2-0.20260111184307-eec823306178
 	github.com/beevik/ntp v1.4.4-0.20240716062501-06ef196b89ec
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-acme/lego/v4 v4.25.2
@@ -18,7 +18,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
-	github.com/xtls/xray-core v1.250911.1-0.20250911134820-83c5370eec69
+	github.com/xtls/xray-core v1.260206.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.42.0
 	golang.org/x/sys v0.36.0
@@ -333,4 +333,4 @@ require (
 
 replace github.com/sagernet/sing-box v1.13.0 => github.com/wyx2685/sing-box_mod v1.13.0-alpha.5
 
-replace github.com/xtls/xray-core v1.250911.1-0.20250911134820-83c5370eec69 => github.com/wyx2685/xray-core v0.0.0-20250912060919-a74bf884128d
+replace github.com/xtls/xray-core => github.com/wyx2685/xray-core v0.0.0-20260301200735-965d62dfa5de
