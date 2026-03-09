@@ -5,7 +5,6 @@ go 1.26
 require (
 	github.com/apernet/hysteria/core/v2 v2.7.0
 	github.com/apernet/hysteria/extras/v2 v2.6.4
-	github.com/apernet/quic-go v0.57.2-0.20260111184307-eec823306178
 	github.com/beevik/ntp v1.4.4-0.20240716062501-06ef196b89ec
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-acme/lego/v4 v4.25.2
@@ -56,6 +55,7 @@ require (
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.7 // indirect
 	github.com/aliyun/credentials-go v1.4.6 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/apernet/quic-go v0.57.2-0.20260111184307-eec823306178 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.36.6 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.29.18 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.71 // indirect
