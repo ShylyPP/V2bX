@@ -32,7 +32,7 @@ jobs:
       release_name: ${{ steps.tag.outputs.RELEASE_NAME }}
     steps:
       - name: Checkout codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Determine version tag
         id: tag
         run: |
@@ -108,7 +108,7 @@ jobs:
       CGO_ENABLED: 0
     steps:
       - name: Checkout codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Show workflow information
         id: get_filename
         run: |
@@ -200,7 +200,7 @@ jobs:
     if: github.event_name != 'release'
     steps:
       - name: Checkout codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Update latest tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
