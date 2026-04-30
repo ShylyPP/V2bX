@@ -1,10 +1,10 @@
 # V2bX
 
 <p align="center">
-  <img src="https://img.shields.io/github/v/release/Shannon-x/V2bX?style=flat-square" alt="Release">
-  <img src="https://img.shields.io/github/actions/workflow/status/Shannon-x/V2bX/release.yml?style=flat-square&label=Build" alt="Build Status">
-  <img src="https://img.shields.io/github/license/Shannon-x/V2bX?style=flat-square" alt="License">
-  <img src="https://img.shields.io/github/go-mod/go-version/Shannon-x/V2bX?style=flat-square" alt="Go Version">
+    <img src="https://img.shields.io/github/v/release/ShylyPP/V2bX?style=flat-square" alt="Release">
+    <img src="https://img.shields.io/github/actions/workflow/status/ShylyPP/V2bX/release.yml?style=flat-square&label=Build" alt="Build Status">
+    <img src="https://img.shields.io/github/license/ShylyPP/V2bX?style=flat-square" alt="License">
+    <img src="https://img.shields.io/github/go-mod/go-version/ShylyPP/V2bX?style=flat-square" alt="Go Version">
 </p>
 
 **V2bX** 是一个基于多内核的 V2board 节点服务端程序，支持同时对接多个节点，轻量、高效、易部署。
@@ -51,13 +51,13 @@
 支持 **Ubuntu / Debian / CentOS / Alpine / Arch**，支持 **amd64 / arm64 / armv7 / armv6 / armv5 / s390x / riscv64** 架构：
 
 ```bash
-wget -N https://raw.githubusercontent.com/Shannon-x/V2bX/dev_new/V2bX-script-master/install.sh && bash install.sh
+wget -N https://raw.githubusercontent.com/ShylyPP/V2bX/dev_new/V2bX-script-master/install.sh && bash install.sh
 ```
 
 安装指定版本：
 
 ```bash
-wget -N https://raw.githubusercontent.com/Shannon-x/V2bX/dev_new/V2bX-script-master/install.sh && bash install.sh v1.0.3
+wget -N https://raw.githubusercontent.com/ShylyPP/V2bX/dev_new/V2bX-script-master/install.sh && bash install.sh v1.0.3
 ```
 
 首次安装时脚本会询问是否自动生成配置文件，选择 `y` 即可进入交互式配置向导。
@@ -96,7 +96,7 @@ docker run -d \
   --restart=always \
   --network=host \
   -v /etc/V2bX:/etc/V2bX \
-  ghcr.io/shannon-x/v2bx:latest
+    ghcr.io/shylypp/v2bx:latest
 ```
 
 ### Docker Compose 部署
@@ -106,7 +106,7 @@ docker run -d \
 ```yaml
 services:
   v2bx:
-    image: ghcr.io/shannon-x/v2bx:latest
+    image: ghcr.io/shylypp/v2bx:latest
     container_name: v2bx
     restart: always
     network_mode: host
@@ -496,7 +496,7 @@ export SING_DNS_PATH=/etc/V2bX/sing_dns.json
 ## 手动编译
 
 ```bash
-git clone https://github.com/Shannon-x/V2bX.git
+git clone https://github.com/ShylyPP/V2bX.git
 cd V2bX && git checkout dev_new
 
 GOEXPERIMENT=jsonv2 go build -v -o V2bX \
