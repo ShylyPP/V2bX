@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ type Client struct {
 	Token            string
 	NodeType         string
 	NodeId           int
+	ApiVersion       int // 1 = V1 UniProxy, 2 = V2 flat API
 	nodeEtag         string
 	userEtag         string
 	responseBodyHash string
@@ -36,14 +38,18 @@ func New(c *conf.ApiConfig) (*Client, error) {
 		client = resty.NewWithLocalAddr(&net.TCPAddr{
 			IP: net.ParseIP(c.APISendIP),
 		})
-	} else {	
+	} else {
 		client = resty.New()
 	}
-	client.SetRetryCount(3)
+	client.SetTransport(&http.Transport{
+		MaxIdleConnsPerHost: 10,
+		IdleConnTimeout:     90 * time.Second,
+	})
+	client.SetRetryCount(0)
 	if c.Timeout > 0 {
 		client.SetTimeout(time.Duration(c.Timeout) * time.Second)
 	} else {
-		client.SetTimeout(5 * time.Second)
+		client.SetTimeout(30 * time.Second)
 	}
 	client.OnError(func(req *resty.Request, err error) {
 		var v *resty.ResponseError
@@ -77,14 +83,25 @@ func New(c *conf.ApiConfig) (*Client, error) {
 		"node_id":   strconv.Itoa(c.NodeID),
 		"token":     c.Key,
 	})
+	apiVersion := c.ApiVersion
+	if apiVersion == 0 {
+		apiVersion = 1
+	}
 	return &Client{
-		client:    client,
-		Token:     c.Key,
-		APIHost:   c.APIHost,
-		APISendIP: c.APISendIP,
-		NodeType:  c.NodeType,
-		NodeId:    c.NodeID,
-		UserList:  &UserListBody{},
-		AliveMap:  &AliveMap{},
+		client:     client,
+		Token:      c.Key,
+		APIHost:    c.APIHost,
+		APISendIP:  c.APISendIP,
+		NodeType:   c.NodeType,
+		NodeId:     c.NodeID,
+		ApiVersion: apiVersion,
+		UserList:   &UserListBody{},
+		AliveMap:   &AliveMap{},
 	}, nil
+}
+
+func (c *Client) Close() {
+	if t, ok := c.client.GetClient().Transport.(*http.Transport); ok {
+		t.CloseIdleConnections()
+	}
 }

@@ -4,13 +4,16 @@ on:
   workflow_dispatch:
   release:
     types: [published]
+  push:
+    branches:
+      - 'dev_new'
   pull_request:
     branches:
       - 'dev_new'
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/v2bx
+  IMAGE_NAME: shannon-x/v2bx
 
 jobs:
   build:

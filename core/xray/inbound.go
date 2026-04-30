@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"encoding/json"
+	"strconv"
 
 	"github.com/InazumaV/V2bX/api/panel"
 	"github.com/InazumaV/V2bX/conf"
@@ -37,8 +38,11 @@ func buildInbound(option *conf.Options, nodeInfo *panel.NodeInfo, tag string) (*
 	case "shadowsocks":
 		err = buildShadowsocks(option, nodeInfo, in)
 		network = "tcp"
+	case "hysteria2":
+		err = buildHysteria2(nodeInfo, in)
+		network = "hysteria"
 	default:
-		return nil, fmt.Errorf("unsupported node type: %s, Only support: V2ray, Trojan, Shadowsocks", nodeInfo.Type)
+		return nil, fmt.Errorf("unsupported node type: %s, Only support: V2ray, Trojan, Shadowsocks, Hysteria2", nodeInfo.Type)
 	}
 	if err != nil {
 		return nil, err
@@ -58,37 +62,77 @@ func buildInbound(option *conf.Options, nodeInfo *panel.NodeInfo, tag string) (*
 	// Set SniffingConfig
 	sniffingConfig := &coreConf.SniffingConfig{
 		Enabled:      true,
-		DestOverride: &coreConf.StringList{"http", "tls"},
+		DestOverride: coreConf.StringList{"http", "tls"},
 	}
 	if option.XrayOptions.DisableSniffing {
 		sniffingConfig.Enabled = false
 	}
 	in.SniffingConfig = sniffingConfig
+	// Ensure StreamSetting is initialized before accessing sub-fields
+	if in.StreamSetting == nil {
+		t := coreConf.TransportProtocol(network)
+		in.StreamSetting = &coreConf.StreamConfig{Network: &t}
+	}
+
+	// Determine ProxyProtocol: from panel NetworkSettings (v2node compat) OR local config
+	enableProxyProtocol := option.XrayOptions.EnableProxyProtocol
+	if !enableProxyProtocol {
+		// Check panel's NetworkSettings for acceptProxyProtocol (as v2node does)
+		var networkSettings json.RawMessage
+		switch nodeInfo.Type {
+		case "vmess", "vless":
+			if nodeInfo.VAllss != nil {
+				networkSettings = nodeInfo.VAllss.NetworkSettings
+			}
+		case "trojan":
+			if nodeInfo.Trojan != nil {
+				networkSettings = nodeInfo.Trojan.NetworkSettings
+			}
+		}
+		if len(networkSettings) > 0 {
+			var ppConfig struct {
+				AcceptProxyProtocol bool `json:"acceptProxyProtocol"`
+			}
+			if json.Unmarshal(networkSettings, &ppConfig) == nil && ppConfig.AcceptProxyProtocol {
+				enableProxyProtocol = true
+			}
+		}
+	}
+
 	switch network {
 	case "tcp":
 		if in.StreamSetting.TCPSettings != nil {
-			in.StreamSetting.TCPSettings.AcceptProxyProtocol = option.XrayOptions.EnableProxyProtocol
+			in.StreamSetting.TCPSettings.AcceptProxyProtocol = enableProxyProtocol
 		} else {
 			tcpSetting := &coreConf.TCPConfig{
-				AcceptProxyProtocol: option.XrayOptions.EnableProxyProtocol,
-			} //Enable proxy protocol
+				AcceptProxyProtocol: enableProxyProtocol,
+			}
 			in.StreamSetting.TCPSettings = tcpSetting
 		}
 	case "ws":
 		if in.StreamSetting.WSSettings != nil {
-			in.StreamSetting.WSSettings.AcceptProxyProtocol = option.XrayOptions.EnableProxyProtocol
+			in.StreamSetting.WSSettings.AcceptProxyProtocol = enableProxyProtocol
 		} else {
 			in.StreamSetting.WSSettings = &coreConf.WebSocketConfig{
-				AcceptProxyProtocol: option.XrayOptions.EnableProxyProtocol,
-			} //Enable proxy protocol
+				AcceptProxyProtocol: enableProxyProtocol,
+			}
 		}
 	default:
 		socketConfig := &coreConf.SocketConfig{
-			AcceptProxyProtocol: option.XrayOptions.EnableProxyProtocol,
+			AcceptProxyProtocol: enableProxyProtocol,
 			TFO:                 option.XrayOptions.EnableTFO,
-		} //Enable proxy protocol
+		}
 		in.StreamSetting.SocketSettings = socketConfig
 	}
+
+	// Also set SocketSettings for universal ProxyProtocol support (v2node compat)
+	if enableProxyProtocol {
+		if in.StreamSetting.SocketSettings == nil {
+			in.StreamSetting.SocketSettings = &coreConf.SocketConfig{}
+		}
+		in.StreamSetting.SocketSettings.AcceptProxyProtocol = true
+	}
+
 	// Set TLS or Reality settings
 	switch nodeInfo.Security {
 	case panel.Tls:
@@ -110,6 +154,10 @@ func buildInbound(option *conf.Options, nodeInfo *panel.NodeInfo, tag string) (*
 					},
 				},
 				RejectUnknownSNI: option.CertConfig.RejectUnknownSni,
+			}
+			if nodeInfo.Type == "hysteria2" || nodeInfo.Type == "tuic" {
+				alpnList := &coreConf.StringList{"h3"}
+				in.StreamSetting.TLSSettings.ALPN = alpnList
 			}
 		}
 	case panel.Reality:
@@ -273,6 +321,9 @@ func buildTrojan(config *conf.Options, nodeInfo *panel.NodeInfo, inbound *coreCo
 	}
 	t := coreConf.TransportProtocol(network)
 	inbound.StreamSetting = &coreConf.StreamConfig{Network: &t}
+	if len(v.NetworkSettings) == 0 {
+		return nil
+	}
 	switch network {
 	case "tcp":
 		err := json.Unmarshal(v.NetworkSettings, &inbound.StreamSetting.TCPSettings)
@@ -381,4 +432,54 @@ func buildTrojanFallbacks(fallbackConfigs []conf.FallBackConfigForXray) ([]*core
 		}
 	}
 	return trojanFallBacks, nil
+}
+
+func buildHysteria2(nodeInfo *panel.NodeInfo, inbound *coreConf.InboundDetourConfig) error {
+	inbound.Protocol = "hysteria"
+	s := nodeInfo.Hysteria2
+	if s == nil {
+		return fmt.Errorf("hysteria2 config is missing")
+	}
+	settings := &coreConf.HysteriaServerConfig{
+		Version: 2,
+	}
+
+	t := coreConf.TransportProtocol("hysteria")
+	up := coreConf.Bandwidth(strconv.Itoa(s.UpMbps) + "mbps")
+	down := coreConf.Bandwidth(strconv.Itoa(s.DownMbps) + "mbps")
+	inbound.StreamSetting = &coreConf.StreamConfig{Network: &t}
+	hysteriasetting := &coreConf.HysteriaConfig{
+		Version: 2,
+	}
+	var finalmask *coreConf.FinalMask
+	if !s.Ignore_Client_Bandwidth && (s.UpMbps > 0 || s.DownMbps > 0) {
+		finalmask = &coreConf.FinalMask{
+			QuicParams: &coreConf.QuicParamsConfig{
+				Congestion: "force-brutal",
+				BrutalUp:   up,
+				BrutalDown: down,
+			},
+		}
+	}
+	if s.ObfsType != "" && s.ObfsPassword != "" {
+		rawobfsJSON := json.RawMessage(fmt.Sprintf(`{"password":"%s"}`, s.ObfsPassword))
+		udp := []coreConf.Mask{
+			{
+				Type:     s.ObfsType,
+				Settings: &rawobfsJSON,
+			},
+		}
+		if finalmask == nil {
+			finalmask = &coreConf.FinalMask{}
+		}
+		finalmask.Udp = udp
+	}
+	inbound.StreamSetting.FinalMask = finalmask
+	sets, err := json.Marshal(settings)
+	inbound.Settings = (*json.RawMessage)(&sets)
+	inbound.StreamSetting.HysteriaSettings = hysteriasetting
+	if err != nil {
+		return fmt.Errorf("marshal hysteria2 settings error: %s", err)
+	}
+	return nil
 }

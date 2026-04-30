@@ -141,6 +141,27 @@ func (s *Selector) DelUsers(users []panel.UserInfo, tag string, info *panel.Node
 	return t.(Core).DelUsers(users, tag, info)
 }
 
+func (s *Selector) UpdateNodeReportMinTraffic(tag string, info *panel.NodeInfo, config *conf.Options) {
+	t, e := s.nodes.Load(tag)
+	if !e {
+		return
+	}
+	t.(Core).UpdateNodeReportMinTraffic(tag, info, config)
+}
+
+func (s *Selector) AddNodeCustomOutbounds(info *panel.NodeInfo) error {
+	var errs []error
+	for _, core := range s.cores {
+		if err := core.AddNodeCustomOutbounds(info); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
+}
+
 func (s *Selector) Protocols() []string {
 	protocols := make([]string, 0)
 	for i := range s.cores {

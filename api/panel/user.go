@@ -2,11 +2,13 @@ package panel
 
 import (
 	"fmt"
+	"io"
 	"strings"
 
 	"encoding/json/jsontext"
 	"encoding/json/v2"
 
+	"github.com/sirupsen/logrus"
 	"github.com/vmihailenco/msgpack/v5"
 )
 
@@ -41,7 +43,10 @@ func (c *Client) GetUserList() ([]UserInfo, error) {
 	if r == nil || r.RawResponse == nil {
 		return nil, fmt.Errorf("received nil response or raw response")
 	}
-	defer r.RawResponse.Body.Close()
+	defer func() {
+		io.Copy(io.Discard, r.RawResponse.Body)
+		r.RawResponse.Body.Close()
+	}()
 
 	if r.StatusCode() == 304 {
 		return nil, nil
@@ -90,25 +95,31 @@ func (c *Client) GetUserList() ([]UserInfo, error) {
 	return userlist.Users, nil
 }
 
-// GetUserAlive will fetch the alive_ip count for users
+// GetUserAlive will fetch the alive_ip count for users.
+// Note: Xboard does not provide the /alivelist endpoint, so this will
+// gracefully return an empty map. The device_limit feature requires
+// panel support for this endpoint to function properly.
 func (c *Client) GetUserAlive() (map[int]int, error) {
 	c.AliveMap = &AliveMap{}
 	const path = "/api/v1/server/UniProxy/alivelist"
 	r, err := c.client.R().
 		ForceContentType("application/json").
 		Get(path)
-	if err != nil || r.StatusCode() >= 399 {
+	if err != nil {
 		c.AliveMap.Alive = make(map[int]int)
 		return c.AliveMap.Alive, nil
 	}
 	if r == nil || r.RawResponse == nil {
-		fmt.Printf("received nil response or raw response")
 		c.AliveMap.Alive = make(map[int]int)
 		return c.AliveMap.Alive, nil
 	}
 	defer r.RawResponse.Body.Close()
+	if r.StatusCode() >= 399 {
+		c.AliveMap.Alive = make(map[int]int)
+		return c.AliveMap.Alive, nil
+	}
 	if err := json.Unmarshal(r.Body(), c.AliveMap); err != nil {
-		fmt.Printf("unmarshal user alive list error: %s", err)
+		logrus.WithField("err", err).Warn("unmarshal user alive list error, alivelist may not be supported by panel")
 		c.AliveMap.Alive = make(map[int]int)
 	}
 
@@ -146,10 +157,8 @@ func (c *Client) ReportNodeOnlineUsers(data *map[int][]string) error {
 		ForceContentType("application/json").
 		Post(path)
 	err = c.checkResponse(r, path, err)
-
 	if err != nil {
-		return nil
+		return err
 	}
-
 	return nil
 }

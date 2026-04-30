@@ -5,7 +5,6 @@ package dispatcher
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -14,7 +13,6 @@ import (
 	"github.com/InazumaV/V2bX/common/rate"
 	"github.com/InazumaV/V2bX/limiter"
 
-	"github.com/xtls/xray-core/app/dispatcher"
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/errors"
@@ -203,10 +201,7 @@ func (d *DefaultDispatcher) getLink(ctx context.Context, network net.Network) (*
 		} else {
 			lm = lmloaded.(*LinkManager)
 		}
-		managedWriter := &ManagedWriter{
-			writer:  uplinkWriter,
-			manager: lm,
-		}
+		managedWriter := newManagedWriter(uplinkWriter, lm)
 		lm.AddLink(managedWriter, outboundLink.Reader)
 		inboundLink.Writer = managedWriter
 		if w != nil {
@@ -225,11 +220,11 @@ func (d *DefaultDispatcher) getLink(ctx context.Context, network net.Network) (*
 		ts := t.GetCounter(user.Email)
 		upcounter := &counter.XrayTrafficCounter{V: &ts.UpCounter}
 		downcounter := &counter.XrayTrafficCounter{V: &ts.DownCounter}
-		inboundLink.Writer = &dispatcher.SizeStatWriter{
+		inboundLink.Writer = &SizeStatWriter{
 			Counter: upcounter,
 			Writer:  inboundLink.Writer,
 		}
-		outboundLink.Writer = &dispatcher.SizeStatWriter{
+		outboundLink.Writer = &SizeStatWriter{
 			Counter: downcounter,
 			Writer:  outboundLink.Writer,
 		}
@@ -243,22 +238,8 @@ func (d *DefaultDispatcher) shouldOverride(ctx context.Context, result SniffResu
 	if domain == "" {
 		return false
 	}
-	for _, d := range request.ExcludeForDomain {
-		if strings.HasPrefix(d, "regexp:") {
-			pattern := d[7:]
-			re, err := regexp.Compile(pattern)
-			if err != nil {
-				errors.LogInfo(ctx, "Unable to compile regex")
-				continue
-			}
-			if re.MatchString(domain) {
-				return false
-			}
-		} else {
-			if strings.ToLower(domain) == d {
-				return false
-			}
-		}
+	if request.ExcludeForDomain != nil && request.ExcludeForDomain.MatchAny(strings.ToLower(domain)) {
+		return false
 	}
 	protocolString := result.Protocol()
 	if resComp, ok := result.(SnifferResultComposite); ok {
@@ -310,6 +291,13 @@ func (d *DefaultDispatcher) Dispatch(ctx context.Context, destination net.Destin
 		go d.routedDispatch(ctx, outbound, destination, l, "")
 	} else {
 		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					errors.LogError(ctx, "panic in dispatcher sniffing: ", fmt.Sprint(r))
+					common.Close(outbound.Writer)
+					common.Interrupt(outbound.Reader)
+				}
+			}()
 			cReader := &cachedReader{
 				reader: outbound.Reader.(*pipe.Reader),
 			}
@@ -397,10 +385,7 @@ func (d *DefaultDispatcher) DispatchLink(ctx context.Context, destination net.De
 		} else {
 			lm = lmloaded.(*LinkManager)
 		}
-		managedWriter := &ManagedWriter{
-			writer:  outbound.Writer,
-			manager: lm,
-		}
+		managedWriter := newManagedWriter(outbound.Writer, lm)
 		outbound.Writer = managedWriter
 		if w != nil {
 			sessionInbound.CanSpliceCopy = 3
@@ -421,7 +406,7 @@ func (d *DefaultDispatcher) DispatchLink(ctx context.Context, destination net.De
 			Counter: &ts.UpCounter,
 		}
 		lm.AddLink(managedWriter, outbound.Reader)
-		outbound.Writer = &dispatcher.SizeStatWriter{
+		outbound.Writer = &SizeStatWriter{
 			Counter: downcounter,
 			Writer:  outbound.Writer,
 		}
@@ -534,11 +519,14 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 		}
 		if l != nil {
 			var destStr string
+			var destIP string
 			if destination.Address.Family().IsDomain() {
 				destStr = destination.Address.Domain()
 			} else {
-				destStr = destination.Address.IP().String()
+				destIP = destination.Address.IP().String()
+				destStr = destIP
 			}
+			// Block domain rules
 			if l.CheckDomainRule(destStr) {
 				errors.LogError(ctx, fmt.Sprintf(
 					"User %s access domain %s reject by rule",
@@ -548,6 +536,27 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 				common.Interrupt(link.Reader)
 				return
 			}
+			// Block IP rules
+			if destIP != "" && l.CheckIPRule(destIP) {
+				errors.LogError(ctx, fmt.Sprintf(
+					"User %s access IP %s reject by rule",
+					sessionInbound.User.Email,
+					destIP))
+				common.Close(link.Writer)
+				common.Interrupt(link.Reader)
+				return
+			}
+			// Block port rules
+			if l.CheckPortRule(int(destination.Port)) {
+				errors.LogError(ctx, fmt.Sprintf(
+					"User %s access port %d reject by rule",
+					sessionInbound.User.Email,
+					destination.Port))
+				common.Close(link.Writer)
+				common.Interrupt(link.Reader)
+				return
+			}
+			// Protocol rules
 			if len(protocol) != 0 {
 				if l.CheckProtocolRule(protocol) {
 					errors.LogError(ctx, fmt.Sprintf(
@@ -556,6 +565,23 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 						protocol))
 					common.Close(link.Writer)
 					common.Interrupt(link.Reader)
+					return
+				}
+			}
+			// Route rules (route/route_ip/direct/proxy)
+			if routeTag := l.CheckRouteRule(destStr, destIP); routeTag != "" {
+				errors.LogInfo(ctx, fmt.Sprintf(
+					"User %s route %s to outbound [%s] by rule",
+					sessionInbound.User.Email,
+					destStr,
+					routeTag))
+				if h := d.ohm.GetHandler(routeTag); h != nil {
+					ob.Tag = h.Tag()
+					if accessMessage := log.AccessMessageFromContext(ctx); accessMessage != nil {
+						accessMessage.Detour = sessionInbound.Tag + " => " + h.Tag()
+						log.Record(accessMessage)
+					}
+					h.Dispatch(ctx, link)
 					return
 				}
 			}
@@ -598,6 +624,17 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 			}
 		} else {
 			errors.LogInfo(ctx, "default route for ", destination)
+		}
+	}
+
+	if handler == nil {
+		if l != nil && l.DefaultOutbound != "" {
+			if h := d.ohm.GetHandler(l.DefaultOutbound); h != nil {
+				errors.LogInfo(ctx, "taking custom default_out detour [", l.DefaultOutbound, "] for [", destination, "]")
+				handler = h
+			} else {
+				errors.LogWarning(ctx, "custom default_out tag non existing: ", l.DefaultOutbound)
+			}
 		}
 	}
 
