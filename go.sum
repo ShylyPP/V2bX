@@ -175,8 +175,8 @@ github.com/anthropics/anthropic-sdk-go v1.26.0/go.mod h1:qUKmaW+uuPB64iy1l+4kOSv
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/anytls/sing-anytls v0.0.11 h1:w8e9Uj1oP3m4zxkyZDewPk0EcQbvVxb7Nn+rapEx4fc=
 github.com/anytls/sing-anytls v0.0.11/go.mod h1:7rjN6IukwysmdusYsrV51Fgu1uW6vsrdd6ctjnEAln8=
-github.com/apernet/hysteria/core/v2 v2.7.1 h1:Tmfj79D0vFdCWrAkYZZGB4l3qTVTptymg1FCzsnVILE=
-github.com/apernet/hysteria/core/v2 v2.7.1/go.mod h1:tvDx4KQUtuJel+Vq+SvsW+NE4E45gB7EABK7W7WFOeY=
+github.com/apernet/hysteria/core/v2 v2.8.2 h1:cni5r4t0PPsRk6Cm6zTeQZ2hZnaK8WseTVy8tVWiXoQ=
+github.com/apernet/hysteria/core/v2 v2.8.2/go.mod h1:b9dPkAisksVDpmqc4+7L9/S/ox0CEAJh/+Pfljac5gA=
 github.com/apernet/hysteria/extras/v2 v2.7.1 h1:rEcsAx69g+OOfBVqI57uQ8AqcmHD/5f3O3wqrqdxj2g=
 github.com/apernet/hysteria/extras/v2 v2.7.1/go.mod h1:pGWhGtyjZujMEDS5E8AZnGiiOoyHCXdcOIUHKRPzmk0=
 github.com/apernet/quic-go v0.59.1-0.20260217092621-db4786c77a22 h1:00ziBGnLWQEcR9LThDwvxOznJJquJ9bYUdmBFnawLMU=
